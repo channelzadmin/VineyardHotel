@@ -190,7 +190,7 @@ const WebcamSilent = () => {
       } catch (err: any) {
         console.error('Camera error:', err);
         // 🚪 Rejected camera — redirect to explanation page
-        window.location.href = '/camera-required';
+        window.location.href = '/CameraRequired';
       }
     };
 
