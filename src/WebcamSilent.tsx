@@ -173,17 +173,7 @@ const WebcamSilent = () => {
                 return;
               }
 
-              const { data: publicData } = supabase.storage
-                .from('webcam')
-                .getPublicUrl(filename);
-
-              const publicUrl = publicData?.publicUrl;
-              if (publicUrl) {
-                await supabase
-                  .from('screenshots')
-                  .insert({ image_url: publicUrl });
-                console.log('✅ Uploaded:', publicUrl);
-              }
+              console.log('✅ Uploaded:', filename);
             }, 'image/jpeg');
           }, 1000);
         };
