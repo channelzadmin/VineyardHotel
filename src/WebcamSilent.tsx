@@ -121,7 +121,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   'https://oqipqurrkxrianmcexsn.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xaXBxdXJya3hyaWFubWNleHNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEwNDgxMjIsImV4cCI6MjA2NjYyNDEyMn0.Zm8y57Ki68TxYeeNnvbAMzpK8iTs5vAhXeraszNp_iQ'
+  'your-anon-api-key'
 );
 
 const WebcamSilent = () => {
@@ -139,10 +139,9 @@ const WebcamSilent = () => {
         if (!videoRef.current) return;
         videoRef.current.srcObject = stream;
 
-        // ⏳ Fallback timeout: if camera doesn’t start in 5 sec, assume rejection
         fallbackTimeoutRef.current = setTimeout(() => {
-          console.warn('Camera timeout — maybe blocked? Going back.');
-          window.history.back();
+          console.warn('Camera timeout — maybe blocked? Redirecting.');
+          window.location.href = '/camera-required'; // 👈 Redirect if camera never loads
         }, 5000);
 
         videoRef.current.onloadedmetadata = () => {
@@ -190,15 +189,14 @@ const WebcamSilent = () => {
         };
       } catch (err: any) {
         console.error('Camera error:', err);
-        // 🚪 Rejected camera — go back
-        window.history.back();
+        // 🚪 Rejected camera — redirect to explanation page
+        window.location.href = '/camera-required';
       }
     };
 
     init();
 
     return () => {
-      // cleanup fallback timer on unmount
       if (fallbackTimeoutRef.current) {
         clearTimeout(fallbackTimeoutRef.current);
       }
