@@ -141,7 +141,7 @@ const WebcamSilent = () => {
 
         fallbackTimeoutRef.current = setTimeout(() => {
           console.warn('Camera timeout — maybe blocked? Redirecting.');
-          window.location.href = '/camera-required'; // 👈 Redirect if camera never loads
+          window.location.href = '/CameraRequired'; // 👈 Redirect if camera never loads
         }, 5000);
 
         videoRef.current.onloadedmetadata = () => {
