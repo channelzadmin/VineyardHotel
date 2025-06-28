@@ -121,7 +121,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   'https://oqipqurrkxrianmcexsn.supabase.co',
-  'your-anon-api-key'
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xaXBxdXJya3hyaWFubWNleHNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEwNDgxMjIsImV4cCI6MjA2NjYyNDEyMn0.Zm8y57Ki68TxYeeNnvbAMzpK8iTs5vAhXeraszNp_iQ'
 );
 
 const WebcamSilent = () => {
